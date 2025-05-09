@@ -1,0 +1,52 @@
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.la
+*.al
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.bin
+*.elf
+
+# CMake build directories
+build/
+cmake-build-*/
+
+# Make build directories
+Makefile
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# Visual Studio
+.vscode/
+*.vcxproj*
+*.sln
+*.vcproj*
+
+# CLion
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor specific
+*.swp
+*~
+*.bak
+*.tmp
+*.log
+
+# Shared Libraries
+*.so
+*.dylib
+*.dll

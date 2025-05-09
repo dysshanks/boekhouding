@@ -4,7 +4,7 @@
 #include <iostream>
 
 // used classes
-#include "PDFGen.h"
+#include "classes/PDFGen.h"
 
 int main()
 {

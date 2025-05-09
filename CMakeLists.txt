@@ -4,4 +4,4 @@ project(boekhouding)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(boekhouding main.cpp
-        PDFGen.h)
+        classes/PDFGen.h)

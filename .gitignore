@@ -876,4 +876,7 @@ FodyWeavers.xsd
 ### VisualStudio Patch ###
 # Additional files built by Visual Studio
 
+# also added my own thing to ignore pdf filed
+*.pdf
+
 # End of https://www.toptal.com/developers/gitignore/api/clion,c++,vs,vim,rider,visualstudiocode,visualstudio,windows,linux,macos,cmake

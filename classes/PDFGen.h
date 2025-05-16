@@ -11,16 +11,16 @@ class PDFGen
 public:
     PDFGen(const std::string& filename) : filename(filename) {}
 
-    void createPDF(const std::string& title, const std::string& content)
+    void createPDF(const std::string& company_name, const std::string& content)
     {
         std::ofstream pdf(filename, std::ios::binary);
 
         pdf << "%PDF-1.4\n";
 
-        std::string set_title = setPDFText(title);
-        std::string set_content = setPDFText(content);
+        std::string set_title = setPDFText(company_name);
+        std::string set_adress = setPDFText(content);
         std::string page_content = "BT /F1 24 Tf 100 750 Td (" + set_title + ") Tj ET\n";
-        page_content += "BT /F1 14 Tf 100 700 Td (" + set_content + ") Tj ET";
+        page_content += "BT /F1 14 Tf 100 700 Td (" + set_adress + ") Tj ET";
 
         pdf << "1 0 obj\n";
         pdf << "<< /Type /Catalog /Pages 2 0 R >>\n";

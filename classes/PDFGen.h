@@ -4,54 +4,86 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <iomanip>
 
 class PDFGen
 {
-public: PDFGen(const std::string& filename) : filename(filename) {}
+public:
+    PDFGen(const std::string& filename) : filename(filename) {}
 
     void createPDF(const std::string& title, const std::string& content)
     {
-        std::ofstream file(filename, std::ios::binary);
-        if (!file)
-        {
-            throw std::runtime_error("Failed to open file");
-        }
+        std::ofstream pdf(filename, std::ios::binary);
 
-        file << "%PDF-1.4\n";
-        int objCount = 1;
+        pdf << "%PDF-1.4\n";
 
-        long titleObjPos = file.tellp();
-        file << objCount++ << " 0 obj\n<< /Type /Metadata /Subtype /XML /Length " << title.size() + 28 << " >>\nstream\n";
-        file << "<?xpacket begin='\xef\xbb\xbf' id='W5M0MpCehiHzreSzNTczkc9d'?>\n";
-        file << "<title>" << title << "</title>\n";
-        file << "<?xpacket end='w'?>\nendstream\nendobj\n";
+        std::string set_title = setPDFText(title);
+        std::string set_content = setPDFText(content);
+        std::string page_content = "BT /F1 24 Tf 100 750 Td (" + set_title + ") Tj ET\n";
+        page_content += "BT /F1 14 Tf 100 700 Td (" + set_content + ") Tj ET";
 
-        long pageObjPos = file.tellp();
-        file << objCount++ << " 0 obj\n<< /Type /Page /Parent 3 0 R /Contents 4 0 R >>\nendobj\n";
+        pdf << "1 0 obj\n";
+        pdf << "<< /Type /Catalog /Pages 2 0 R >>\n";
+        pdf << "endobj\n";
 
-        long pagesObjPos = file.tellp();
-        file << objCount++ << " 0 obj\n<< /Type /Pages /Kids [2 0 R] /Count 1 >>\nendobj\n";
+        pdf << "2 0 obj\n";
+        pdf << "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n";
+        pdf << "endobj\n";
 
-        long catalogObjPos = file.tellp();
-        file << objCount++ << " 0 obj\n<< /Type /Catalog /Pages 3 0 R >>\nendobj\n";
+        pdf << "3 0 obj\n";
+        pdf << "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >>\n";
+        pdf << "endobj\n";
 
-        long contentObjPos = file.tellp();
-        file << objCount++ << " 0 obj\n<< /Length " << content.size() + 18 << " >>\nstream\nBT /F1 12 Tf 72 720 Td (" << content << ") Tj ET\nendstream\nendobj\n";
+        pdf << "4 0 obj\n";
+        pdf << "<< /Length " << page_content.size() << " >>\n";
+        pdf << "stream\n" << page_content << "\nendstream\n";
+        pdf << "endobj\n";
 
-        long xrefPos = file.tellp();
-        file << "xref\n0 " << objCount << "\n0000000000 65535 f \n";
-        file << std::string(titleObjPos, '0') << " 00000 n \n";
-        file << std::string(pageObjPos, '0') << " 00000 n \n";
-        file << std::string(pagesObjPos, '0') << " 00000 n \n";
-        file << std::string(catalogObjPos, '0') << " 00000 n \n";
-        file << std::string(contentObjPos, '0') << " 00000 n \n";
+        pdf << "5 0 obj\n";
+        pdf << "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n";
+        pdf << "endobj\n";
 
-        file << "trailer\n<< /Size " << objCount << " /Root 4 0 R >>\nstartxref\n" << xrefPos << "\n%%EOF";
-        file.close();
+        std::streampos xref_pos = pdf.tellp();
+        pdf << "xref\n";
+        pdf << "0 6\n";
+        writeOffset(pdf, 0);
+        writeOffset(pdf, 9);
+        writeOffset(pdf, 38);
+        writeOffset(pdf, 75);
+        writeOffset(pdf, 184);
+        writeOffset(pdf, 272);
+
+        pdf << "trailer\n";
+        pdf << "<< /Size 6 /Root 1 0 R >>\n";
+        pdf << "startxref\n";
+        pdf << xref_pos << "\n";
+        pdf << "%%EOF";
+
+        pdf.close();
+        std::cout << "PDF file '" << filename << "' created successfully!" << std::endl;
     }
 
-private: std::string filename;
-};
+private:
+    std::string filename;
 
+    void writeOffset(std::ofstream& file, long pos)
+    {
+        file << std::setw(10) << std::setfill('0') << pos << " 00000 n \n";
+    }
+
+    std::string setPDFText(const std::string& text)
+    {
+        std::string set;
+        for (char c : text)
+        {
+            if (c == '(' || c == ')' || c == '\\')
+            {
+                set += '\\';
+            }
+            set += c;
+        }
+        return set;
+    }
+};
 
 #endif //BOEKHOUDING_PDFGEN_H

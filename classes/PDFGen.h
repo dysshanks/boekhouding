@@ -5,13 +5,16 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <utility>
+#include <vector>
+#include <sstream>
 
 class PDFGen
 {
 public:
-    PDFGen(const std::string& filename) : filename(filename) {}
+    explicit PDFGen(std::string filename) : filename(std::move(filename)) {}
 
-    void createPDF(const std::string& company_name, const std::string& content)
+    void createPDF(const std::string& company_name, const std::string& content, const std::string& invoice)
     {
         std::ofstream pdf(filename, std::ios::binary);
 
@@ -19,33 +22,32 @@ public:
 
         std::string set_title = setPDFText(company_name);
         std::string set_adress = setPDFText(content);
-        std::string page_content = "BT /F1 24 Tf 100 750 Td (" + set_title + ") Tj ET\n";
-        page_content += "BT /F1 14 Tf 100 700 Td (" + set_adress + ") Tj ET";
+        std::vector<std::string> invoice_lines = splitLines(invoice);
 
-        pdf << "1 0 obj\n";
-        pdf << "<< /Type /Catalog /Pages 2 0 R >>\n";
-        pdf << "endobj\n";
+        std::string page_content;
 
-        pdf << "2 0 obj\n";
-        pdf << "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n";
-        pdf << "endobj\n";
+        page_content += "BT /F1 36 Tf 50 800 Td (" + set_title + ") Tj ET\n";
 
-        pdf << "3 0 obj\n";
-        pdf << "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >>\n";
-        pdf << "endobj\n";
+        page_content += "BT /F1 14 Tf 50 770 Td (" + set_adress + ") Tj ET\n";
 
-        pdf << "4 0 obj\n";
-        pdf << "<< /Length " << page_content.size() << " >>\n";
-        pdf << "stream\n" << page_content << "\nendstream\n";
-        pdf << "endobj\n";
+        int y_pos = 730;
+        for (const auto& line : invoice_lines)
+        {
+            std::string formatted = setPDFText(line);
+            page_content += "BT /F1 14 Tf 100 " + std::to_string(y_pos) + " Td (" + formatted + ") Tj ET\n";
+            y_pos -= 20;
+        }
 
-        pdf << "5 0 obj\n";
-        pdf << "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n";
-        pdf << "endobj\n";
+        pdf << "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+        pdf << "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
+        pdf << "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R "
+               "/Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n";
+        pdf << "4 0 obj\n<< /Length " << page_content.size() << " >>\nstream\n";
+        pdf << page_content << "endstream\nendobj\n";
+        pdf << "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n";
 
         std::streampos xref_pos = pdf.tellp();
-        pdf << "xref\n";
-        pdf << "0 6\n";
+        pdf << "xref\n0 6\n";
         writeOffset(pdf, 0);
         writeOffset(pdf, 9);
         writeOffset(pdf, 38);
@@ -53,25 +55,21 @@ public:
         writeOffset(pdf, 184);
         writeOffset(pdf, 272);
 
-        pdf << "trailer\n";
-        pdf << "<< /Size 6 /Root 1 0 R >>\n";
-        pdf << "startxref\n";
-        pdf << xref_pos << "\n";
-        pdf << "%%EOF";
-
+        pdf << "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" << xref_pos << "\n%%EOF";
         pdf.close();
+
         std::cout << "PDF file '" << filename << "' created successfully!" << std::endl;
     }
 
 private:
     std::string filename;
 
-    void writeOffset(std::ofstream& file, long pos)
+    static void writeOffset(std::ofstream& file, long pos)
     {
         file << std::setw(10) << std::setfill('0') << pos << " 00000 n \n";
     }
 
-    std::string setPDFText(const std::string& text)
+    static std::string setPDFText(const std::string& text)
     {
         std::string set;
         for (char c : text)
@@ -84,6 +82,18 @@ private:
         }
         return set;
     }
+
+    static std::vector<std::string> splitLines(const std::string& text, char delimiter = '\n')
+    {
+        std::vector<std::string> lines;
+        std::stringstream ss(text);
+        std::string line;
+        while (std::getline(ss, line, delimiter))
+        {
+            lines.push_back(line);
+        }
+        return lines;
+    }
 };
 
-#endif //BOEKHOUDING_PDFGEN_H
+#endif // BOEKHOUDING_PDFGEN_H
